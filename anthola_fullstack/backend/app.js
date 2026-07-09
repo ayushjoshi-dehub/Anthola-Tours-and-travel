@@ -50,6 +50,13 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 const frontendDir = path.join(__dirname, '..', 'frontend');
 const frontendDistDir = path.join(frontendDir, 'dist');
 const uploadsDir = path.join(__dirname, 'uploads');
+
+// Log frontend paths for debugging
+console.log('[frontend] __dirname:', __dirname);
+console.log('[frontend] frontendDir:', frontendDir);
+console.log('[frontend] frontendDistDir:', frontendDistDir);
+console.log('[frontend] dist exists?', fs.existsSync(frontendDistDir));
+
 app.use(express.static(frontendDistDir));
 app.use(express.static(frontendDir));
 app.use('/uploads', express.static(uploadsDir));
