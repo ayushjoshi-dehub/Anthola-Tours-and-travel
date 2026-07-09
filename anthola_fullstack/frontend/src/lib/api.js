@@ -27,7 +27,13 @@ export async function api(path, { method = 'GET', body, auth: requireAuthToken =
 
   if (requireAuthToken) {
     const token = getTokens().accessToken;
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (!token) {
+      // Fail fast instead of sending an unauthenticated request that 401s.
+      const err = new Error('No authentication token found. Please sign in again.');
+      err.status = 401;
+      throw err;
+    }
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const baseUrl = getApiBaseUrl();

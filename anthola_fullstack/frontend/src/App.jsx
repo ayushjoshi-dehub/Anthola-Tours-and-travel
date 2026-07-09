@@ -1547,11 +1547,17 @@ function App() {
 
   useEffect(() => {
     async function hydrate() {
+      // Only call /api/auth/me if a token exists; otherwise skip the
+      // authenticated request entirely instead of sending it and 401-ing.
+      if (!auth.token) {
+        auth.logout();
+        setLoading(false);
+        return;
+      }
       try {
-        const data = await api('/api/auth/me', { auth: true }).catch(() => null);
+        const data = await api('/api/auth/me', { auth: true });
         if (data && data.user) {
-          // Token is already in auth store from localStorage
-          // Just verify the user is still valid
+          // Token is already in auth store from localStorage; verify the user is still valid.
           auth.login(auth.token, data.user);
         } else {
           auth.logout();
