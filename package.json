@@ -1,4 +1,12 @@
 {
+  "name": "anthola-fullstack",
+  "version": "1.0.0",
+  "description": "Anthola Bus Booking - Full Stack Application",
+  "private": true,
+  "scripts": {
+    "start": "cd anthola_fullstack/backend && node server.js",
+    "dev": "cd anthola_fullstack/backend && npm run dev"
+  },
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0"
   }
