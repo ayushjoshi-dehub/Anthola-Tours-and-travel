@@ -3,9 +3,14 @@ services:
     name: anthola-backend
     env: node
     plan: free
-    buildCommand: |
-      cd anthola_fullstack/frontend && npm install && npm run build && cd ../.. && 
-      cd anthola_fullstack/backend && npm install
+    buildCommand: >
+      export VITE_API_BASE_URL=https://anthola-tours-and-travel.onrender.com &&
+      export VITE_SOCKET_URL=https://anthola-tours-and-travel.onrender.com &&
+      cd anthola_fullstack/frontend &&
+      npm install &&
+      npm run build &&
+      cd ../backend &&
+      npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -19,9 +24,9 @@ services:
       - key: REFRESH_TOKEN_SECRET
         sync: false
       - key: CORS_ORIGIN
-        sync: false
+        value: https://anthola-tours-and-travel.onrender.com
       - key: FRONTEND_URL
-        sync: false
+        value: https://anthola-tours-and-travel.onrender.com
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
