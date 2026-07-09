@@ -1,0 +1,32 @@
+mutation CreateUser($email: String!, $displayName: String!) @auth(level: PUBLIC) {
+  user_insert(data: { email: $email, displayName: $displayName, createdAt_expr: "request.time" })
+}
+
+query GetProfile($id: UUID!) @auth(level: USER) {
+  user(id: $id) {
+    email
+    displayName
+    profileSettingss_on_user {
+      themePreference
+      notificationsEnabled
+    }
+  }
+}
+
+mutation CreateCategory($name: String!, $slug: String!) @auth(level: USER) {
+  category_insert(data: {
+    name: $name,
+    slug: $slug,
+    user: { id_expr: "auth.uid" }
+  })
+}
+
+mutation CreateContentItem($categoryId: UUID!, $title: String!, $status: String!) @auth(level: USER) {
+  contentItem_insert(data: {
+    title: $title,
+    status: $status,
+    categoryId: $categoryId,
+    user: { id_expr: "auth.uid" },
+    createdAt_expr: "request.time"
+  })
+}

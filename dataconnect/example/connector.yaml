@@ -1,0 +1,26 @@
+connectorId: example
+generate:
+  javascriptSdk:
+    - outputDir: ..\..\anthola_fullstack\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\anthola_fullstack
+      react: false
+      angular: false
+      clientCache: {}
+    - outputDir: ..\..\anthola_fullstack\frontend\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\anthola_fullstack\frontend
+      react: true
+      angular: false
+      clientCache: {}
+    - outputDir: ..\..\anthola_fullstack\frontend\anthola tours and
+        travel\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\anthola_fullstack\frontend\anthola tours and travel
+      react: true
+      angular: false
+      clientCache: {}
+  adminNodeSdk:
+    - outputDir: ..\..\anthola_fullstack\backend\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\anthola_fullstack\backend

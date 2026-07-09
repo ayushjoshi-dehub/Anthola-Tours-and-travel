@@ -1,0 +1,11 @@
+:root{--glass:rgba(255,255,255,.10);--glassStroke:rgba(255,255,255,.18)}
+html{scroll-behavior:smooth}
+body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+.glass{background:var(--glass);border:1px solid var(--glassStroke);backdrop-filter:blur(14px)}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+.toast-container{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.toast{min-width:220px;max-width:320px;padding:12px 14px;border-radius:14px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:14px}
+.toast.success{background:#16a34a}
+.toast.error{background:#dc2626}
+.toast.info{background:#2563eb}

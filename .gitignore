@@ -1,0 +1,124 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.example
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.nvmrc
+
+# Build and dist
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+.jest_cache/
+cypress/screenshots/
+cypress/videos/
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+mongodb/
+
+# Uploads
+uploads/
+public/uploads/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Firebase
+firebase-debug.log
+.firebase/
+.firebaserc
+
+# Misc
+.cache/
+.history/
+.vuepress/dist/
+
+# IDE-specific
+*.iml
+.gradle/
+local.properties
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Yarn
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Deployment
+.vercel/
+.netlify/
+.env.production.local
+
+# Graphify output (if using graphify knowledge graphs)
+graphify-out/

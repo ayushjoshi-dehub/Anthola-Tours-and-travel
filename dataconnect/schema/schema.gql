@@ -1,0 +1,38 @@
+type User @table {
+  # The id is the Firebase Auth UID string, mapped to UUID
+  email: String!
+  displayName: String
+  avatarUrl: String
+  bio: String
+  createdAt: Timestamp!
+}
+
+type ProfileSettings @table {
+  user: User!
+  themePreference: String!
+  notificationsEnabled: Boolean!
+}
+
+type Category @table {
+  user: User!
+  name: String!
+  slug: String!
+  colorCode: String
+}
+
+type ContentItem @table {
+  user: User!
+  category: Category
+  title: String!
+  status: String!
+  description: String
+  imageUrl: String
+  createdAt: Timestamp!
+}
+
+type AuditLog @table {
+  user: User!
+  actionType: String!
+  timestamp: Timestamp!
+  ipAddress: String
+}

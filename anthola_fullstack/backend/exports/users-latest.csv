@@ -1,0 +1,9 @@
+Name,Company,Owner name,Email,Phone,Role,PAN,Business reg.,Address,Bookings count,Registration date
+anthols,anthols,bishnu,joshi@gmail.com,123456789,BUS_OWNER,123456789,525252,kanchanpur,0,2026-06-18T19:13:01.908Z
+ayushi,,,ayusg@gmail.com,123456789,PASSENGER,,,,1,2026-06-18T19:09:04.906Z
+ayush,,,joshiayush123@gmail.com,789456,customer,,,,2,2026-06-18T18:23:03.863Z
+bipul,,,bipul123@Qgmail.com,981234567,owner,,,,0,2026-01-18T04:35:09.109Z
+Owner,,,owner@anthola.local,0000000001,owner,,,,0,2026-01-17T18:33:37.571Z
+rohan,,,joshirohan78@gmail.com,9655565555,user,,,,1,2026-01-17T17:37:40.976Z
+ayush,,,joshiayush78@gmail.com,9655565456,user,,,,4,2026-01-17T17:34:48.548Z
+Admin,,,admin@anthola.local,0000000000,admin,,,,1,2026-01-17T17:25:27.931Z
