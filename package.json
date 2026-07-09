@@ -4,6 +4,7 @@
   "description": "Anthola Bus Booking - Full Stack Application",
   "private": true,
   "scripts": {
+    "build": "cd anthola_fullstack/frontend && npm install && VITE_API_BASE_URL=https://anthola-tours-and-travel.onrender.com VITE_SOCKET_URL=https://anthola-tours-and-travel.onrender.com npm run build && cd ../backend && npm install",
     "start": "cd anthola_fullstack/backend && node server.js",
     "dev": "cd anthola_fullstack/backend && npm run dev"
   },
