@@ -1,0 +1,21 @@
+{
+  "buildCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "MONGO_URI": "@mongo_uri",
+    "JWT_SECRET": "@jwt_secret",
+    "REFRESH_TOKEN_SECRET": "@refresh_token_secret",
+    "CORS_ORIGIN": "@cors_origin",
+    "FRONTEND_URL": "@frontend_url",
+    "SMTP_HOST": "@smtp_host",
+    "SMTP_PORT": "@smtp_port",
+    "SMTP_USER": "@smtp_user",
+    "SMTP_PASS": "@smtp_pass"
+  }
+}
