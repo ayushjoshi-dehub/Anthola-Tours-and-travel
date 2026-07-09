@@ -1,37 +1,39 @@
-import { auth } from './firebase';
-
-const BASE = import.meta.env.VITE_API_BASE_URL || '';
+import { getApiBaseUrl, getSocketUrl } from './config';
+import { useAuth } from '../store/auth';
 
 export function getTokens() {
-  return { accessToken: '', refreshToken: '' };
+  const store = useAuth.getState();
+  return {
+    accessToken: store.token || '',
+    refreshToken: localStorage.getItem('anthola-refreshToken') || ''
+  };
 }
 
-export function setTokens() {}
+export function setTokens(accessToken, refreshToken) {
+  if (accessToken) localStorage.setItem('anthola-token', accessToken);
+  if (refreshToken) localStorage.setItem('anthola-refreshToken', refreshToken);
+}
 
-export function clearTokens() {}
-
-async function getFirebaseToken() {
-  const user = auth.currentUser;
-  if (!user) return null;
-  try {
-    return await user.getIdToken();
-  } catch (err) {
-    console.error('[api] Failed to get Firebase ID token:', err);
-    return null;
-  }
+export function clearTokens() {
+  localStorage.removeItem('anthola-token');
+  localStorage.removeItem('anthola-refreshToken');
+  useAuth.getState().logout();
 }
 
 export async function api(path, { method = 'GET', body, auth: requireAuthToken = true } = {}) {
   const headers = {};
   const isFormData = body instanceof FormData;
   if (!isFormData) headers['Content-Type'] = 'application/json';
-  
+
   if (requireAuthToken) {
-    const token = await getFirebaseToken();
+    const token = getTokens().accessToken;
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${path}`;
+
+  const res = await fetch(url, {
     method,
     headers,
     body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
@@ -48,8 +50,11 @@ export async function api(path, { method = 'GET', body, auth: requireAuthToken =
 }
 
 export async function apiDownload(path) {
-  const token = await getFirebaseToken();
-  const res = await fetch(`${BASE}${path}`, {
+  const token = getTokens().accessToken;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${path}`;
+
+  const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   if (!res.ok) throw new Error(`Download failed (${res.status})`);
