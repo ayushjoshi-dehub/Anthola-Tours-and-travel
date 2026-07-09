@@ -7,8 +7,5 @@
     "build": "sh build.sh",
     "start": "cd anthola_fullstack/backend && node server.js",
     "dev": "cd anthola_fullstack/backend && npm run dev"
-  },
-  "dependencies": {
-    "@vercel/speed-insights": "^2.0.0"
   }
 }

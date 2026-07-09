@@ -3,7 +3,6 @@ import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'rea
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 import { api, apiDownload, clearTokens } from './lib/api';
 import { useAuth } from './store/auth';
 
@@ -1358,7 +1357,6 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <SpeedInsights />
     </>
   );
 }
