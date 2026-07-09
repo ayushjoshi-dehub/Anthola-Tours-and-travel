@@ -3,6 +3,7 @@ import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'rea
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { api, apiDownload, clearTokens } from './lib/api';
 import { useAuth } from './store/auth';
 
@@ -1345,17 +1346,20 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/booking" element={<PassengerPage />} />
-      <Route path="/tours" element={<PassengerPage />} />
-      <Route path="/dashboard" element={<OwnerPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/booking" element={<PassengerPage />} />
+        <Route path="/tours" element={<PassengerPage />} />
+        <Route path="/dashboard" element={<OwnerPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <SpeedInsights />
+    </>
   );
 }
 
