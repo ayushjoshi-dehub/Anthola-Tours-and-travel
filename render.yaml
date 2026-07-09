@@ -3,14 +3,7 @@ services:
     name: anthola-backend
     env: node
     plan: free
-    buildCommand: >
-      export VITE_API_BASE_URL=https://anthola-tours-and-travel.onrender.com &&
-      export VITE_SOCKET_URL=https://anthola-tours-and-travel.onrender.com &&
-      cd anthola_fullstack/frontend &&
-      npm install &&
-      npm run build &&
-      cd ../backend &&
-      npm install
+    buildCommand: sh -c 'cd anthola_fullstack/frontend && npm install && VITE_API_BASE_URL=https://anthola-tours-and-travel.onrender.com VITE_SOCKET_URL=https://anthola-tours-and-travel.onrender.com npm run build && cd ../backend && npm install'
     startCommand: npm start
     envVars:
       - key: NODE_ENV
