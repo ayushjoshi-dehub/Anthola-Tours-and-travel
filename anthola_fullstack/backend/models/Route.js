@@ -7,6 +7,7 @@ const RouteSchema = new mongoose.Schema(
     // Bus owner provided information (what customers see and choose from)
     busName: { type: String, trim: true, default: 'Bus' },
     busNumber: { type: String, trim: true, default: '' },
+    busType: { type: String, trim: true, default: 'Standard' },
     busPhotoUrl: { type: String, trim: true, default: '' },
     busGalleryUrls: { type: [String], default: [] },
     busDescription: { type: String, trim: true, default: '' },

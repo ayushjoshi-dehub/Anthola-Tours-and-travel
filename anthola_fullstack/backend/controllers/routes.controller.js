@@ -35,6 +35,7 @@ async function upsertRoute(req, res) {
     isActive,
     busName,
     busNumber,
+    busType,
     busPhotoUrl,
     busGalleryUrls,
     busDescription,
@@ -58,6 +59,7 @@ async function upsertRoute(req, res) {
     routeId: String(routeId).trim(),
     busName: String(busName || 'Bus').trim(),
     busNumber: String(busNumber || '').trim(),
+    busType: String(busType || 'Standard').trim(),
     busPhotoUrl: String(busPhotoUrl || '').trim(),
     busGalleryUrls: Array.isArray(busGalleryUrls)
       ? busGalleryUrls.map(String).map(s => s.trim()).filter(Boolean)

@@ -1,58 +1,76 @@
+const jwt = require('jsonwebtoken');
 const admin = require('../config/firebase');
 const User = require('../models/User');
 
 function parseToken(req) {
   const header = req.headers.authorization || '';
-  return header.startsWith('Bearer ') ? header.slice(7) : null;
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+}
+
+async function resolveFromJwt(token) {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded || !decoded.id) return null;
+    const user = await User.findById(decoded.id);
+    if (!user) return null;
+    if (user.isBlocked) return { blocked: true };
+    return {
+      id: user._id.toString(),
+      username: user.username,
+      role: user.role,
+      email: user.email
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resolveFromFirebase(token) {
+  try {
+    if (!admin.auth) return null;
+    const decoded = await admin.auth().verifyIdToken(token);
+    if (!decoded || !decoded.email) return null;
+    const user = await User.findOne({ email: decoded.email.toLowerCase() });
+    if (!user) return null;
+    if (user.isBlocked) return { blocked: true };
+    return {
+      id: user._id.toString(),
+      username: user.username,
+      role: user.role,
+      email: user.email
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+// Primary auth is the app-issued JWT. Firebase ID tokens are an optional fallback.
+async function authenticate(req) {
+  const token = parseToken(req);
+  if (!token) return null;
+  const jwtUser = await resolveFromJwt(token);
+  if (jwtUser) return jwtUser;
+  const fbUser = await resolveFromFirebase(token);
+  if (fbUser) return fbUser;
+  return null;
 }
 
 async function optionalAuth(req, _res, next) {
-  const token = parseToken(req);
-  if (!token) return next();
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    if (decodedToken && decodedToken.email) {
-      const user = await User.findOne({ email: decodedToken.email.toLowerCase() });
-      if (user && !user.isBlocked) {
-        req.user = {
-          id: user._id.toString(),
-          username: user.username,
-          role: user.role
-        };
-      }
-    }
-  } catch (err) {
+    const user = await authenticate(req);
+    if (user && !user.blocked) req.user = user;
+  } catch (_) {
     // ignore
   }
   return next();
 }
 
 async function requireAuth(req, res, next) {
-  const token = parseToken(req);
-  if (!token) return res.status(401).json({ message: 'Missing token' });
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    if (!decodedToken || !decodedToken.email) {
-      return res.status(401).json({ message: 'Invalid token payload' });
-    }
-    const user = await User.findOne({ email: decodedToken.email.toLowerCase() });
-    if (!user) {
-      return res.status(401).json({ message: 'User profile not found' });
-    }
-    if (user.isBlocked) {
-      return res.status(403).json({ message: 'User is blocked' });
-    }
-    req.user = {
-      id: user._id.toString(),
-      username: user.username,
-      role: user.role
-    };
-    return next();
-  } catch (err) {
-    console.error('[auth] requireAuth error:', err.message);
-    return res.status(401).json({ message: 'Invalid or expired token' });
-  }
+  const user = await authenticate(req);
+  if (!user) return res.status(401).json({ message: 'Missing or invalid token' });
+  if (user.blocked) return res.status(403).json({ message: 'User is blocked' });
+  req.user = user;
+  return next();
 }
 
 function requireBusOwner(req, res, next) {

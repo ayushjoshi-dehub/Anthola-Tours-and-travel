@@ -2,6 +2,7 @@ const Booking = require('../models/Booking');
 const Coupon = require('../models/Coupon');
 const Route = require('../models/Route');
 const SeatLock = require('../models/SeatLock');
+const BlockedSeat = require('../models/BlockedSeat');
 const { getBookedSeats, roomKey } = require('./seats.controller');
 const { writeBookingsSheet } = require('../utils/sheets');
 const { createNotification, logActivity } = require('../utils/notifications');
@@ -49,6 +50,11 @@ async function createBooking(req, res) {
   const bookedSet = new Set(booked);
   for (const s of seatList) {
     if (bookedSet.has(s)) return res.status(409).json({ message: `Seat ${s} is already booked` });
+  }
+
+  const blocked = await BlockedSeat.find({ routeId: String(routeId), date: String(date), seat: { $in: seatList } }).lean();
+  if (blocked.length) {
+    return res.status(409).json({ message: `Seat ${blocked[0].seat} is blocked for external ticketing` });
   }
 
   const basePrice = Number(route.price);

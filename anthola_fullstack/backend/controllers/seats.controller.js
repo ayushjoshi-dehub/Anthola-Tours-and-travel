@@ -1,6 +1,7 @@
 const SeatLock = require('../models/SeatLock');
 const Booking = require('../models/Booking');
 const Route = require('../models/Route');
+const BlockedSeat = require('../models/BlockedSeat');
 
 const LOCK_MINUTES = Number(process.env.SEAT_LOCK_MINUTES || 5);
 
@@ -37,6 +38,10 @@ async function state(req, res) {
     .select('seat lockedBy expiresAt')
     .lean();
 
+  const blocked = await BlockedSeat.find({ routeId: String(routeId), date: String(date) })
+    .select('seat reason note')
+    .lean();
+
   const myId = req.user ? String(req.user.id) : null;
   const locked = locks.map(l => ({
     seat: String(l.seat),
@@ -44,12 +49,19 @@ async function state(req, res) {
     mine: myId ? String(l.lockedBy) === myId : false
   }));
 
+  const blockedSeats = blocked.map(b => ({
+    seat: String(b.seat),
+    reason: b.reason,
+    note: b.note
+  }));
+
   return res.json({
     routeId: String(routeId),
     date: String(date),
     seatCount: Number(route.seatCount || 36),
     booked,
-    locked
+    locked,
+    blocked: blockedSeats
   });
 }
 
