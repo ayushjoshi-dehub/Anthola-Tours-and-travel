@@ -1,14 +1,19 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "env": {
-    "VITE_API_BASE_URL": "@vite_api_base_url",
-    "VITE_SOCKET_URL": "@vite_socket_url"
-  },
   "routes": [
     {
+      "src": "/index.html",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/index.html",
+      "status": 200
     }
   ]
 }
