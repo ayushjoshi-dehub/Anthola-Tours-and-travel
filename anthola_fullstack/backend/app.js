@@ -54,7 +54,12 @@ app.use(express.static(frontendDistDir));
 app.use(express.static(frontendDir));
 app.use('/uploads', express.static(uploadsDir));
 
+// SPA fallback: Only serve index.html for routes, not static assets
 app.get('*', (req, res) => {
+  // Don't serve index.html for static file requests (js, css, etc.)
+  if (req.path.match(/\.\w+$/)) {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const fallbackDir = fs.existsSync(frontendDistDir) ? frontendDistDir : frontendDir;
   res.sendFile(path.join(fallbackDir, 'index.html'));
 });
