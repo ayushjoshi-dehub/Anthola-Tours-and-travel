@@ -1,8 +1,4 @@
----
-noteId: "db9a04306b4711f1b523b5199652752f"
-tags: []
 
----
 
 # Nepal Bus & Tours
 
