@@ -13,6 +13,9 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, trim: true, required: true, unique: true, index: true },
     passwordHash: { type: String },
     firebaseUid: { type: String, unique: true, sparse: true, index: true },
+    googleId: { type: String, trim: true, sparse: true, index: true },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+    emailVerified: { type: Boolean, default: false },
     role: { type: String, enum: ['PASSENGER', 'BUS_OWNER'], default: 'PASSENGER' },
     isBlocked: { type: Boolean, default: false },
     resetPasswordToken: String,
@@ -37,6 +40,8 @@ UserSchema.methods.publicProfile = function () {
     role: this.role,
     isBlocked: this.isBlocked,
     firebaseUid: this.firebaseUid || '',
+    authProvider: this.authProvider || 'local',
+    emailVerified: Boolean(this.emailVerified),
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };

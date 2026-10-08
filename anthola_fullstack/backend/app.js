@@ -17,6 +17,8 @@ const contactRoutes = require('./routes/contact.routes');
 const seatsRoutes = require('./routes/seats.routes');
 const notificationsRoutes = require('./routes/notifications.routes');
 const { rateLimit } = require('./middleware/rateLimit');
+const errorHandler = require('./middleware/errorHandler');
+const notFound = require('./middleware/notFound');
 
 const app = express();
 
@@ -45,7 +47,7 @@ app.use('/api/seats', seatsRoutes);
 app.use('/api/exports', exportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'anthola-backend', timestamp: new Date().toISOString() }));
 
 const frontendDir = path.join(__dirname, '..', 'frontend');
 const frontendDistDir = path.join(frontendDir, 'dist');
@@ -63,12 +65,14 @@ app.use('/uploads', express.static(uploadsDir));
 
 // SPA fallback: Only serve index.html for routes, not static assets
 app.get('*', (req, res) => {
-  // Don't serve index.html for static file requests (js, css, etc.)
   if (req.path.match(/\.\w+$/)) {
     return res.status(404).json({ error: 'Not found' });
   }
   const fallbackDir = fs.existsSync(frontendDistDir) ? frontendDistDir : frontendDir;
   res.sendFile(path.join(fallbackDir, 'index.html'));
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;

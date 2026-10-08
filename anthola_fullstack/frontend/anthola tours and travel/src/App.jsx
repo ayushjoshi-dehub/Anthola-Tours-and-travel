@@ -1,151 +1,105 @@
 import './App.css';
 
-const launcherStyles = `
-  :root {
-    color-scheme: dark;
-    font-family: Inter, system-ui, sans-serif;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background:
-      radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 28%),
-      radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 24%),
-      linear-gradient(180deg, #050816 0%, #0b1220 44%, #04070d 100%);
-    color: #f8fafc;
-  }
-  .launcher {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-  }
-  .panel {
-    width: min(920px, 100%);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 28px;
-    background: rgba(15, 23, 42, 0.74);
-    backdrop-filter: blur(18px);
-    box-shadow: 0 24px 90px rgba(0,0,0,0.35);
-    padding: 28px;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid rgba(56,189,248,0.22);
-    background: rgba(56,189,248,0.12);
-    color: #d8f3ff;
-    border-radius: 999px;
-    padding: 8px 14px;
-    font-size: 12px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-  }
-  h1 {
-    margin: 18px 0 12px;
-    font-size: clamp(2.3rem, 5vw, 4.8rem);
-    line-height: .95;
-    letter-spacing: -0.06em;
-  }
-  .lead {
-    max-width: 60ch;
-    color: rgba(226,232,240,.76);
-    line-height: 1.7;
-    font-size: 1rem;
-  }
-  .grid {
-    display: grid;
-    gap: 16px;
-    margin-top: 28px;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  }
-  .card {
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(2, 6, 23, 0.56);
-    border-radius: 22px;
-    padding: 18px;
-  }
-  .card h2 { margin: 0 0 8px; font-size: 1rem; }
-  .card p { margin: 0; color: rgba(226,232,240,.7); line-height: 1.6; font-size: .95rem; }
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 28px;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 18px;
-    border-radius: 16px;
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .btn.primary {
-    background: linear-gradient(135deg, #fbbf24, #fb923c);
-    color: #08111f;
-  }
-  .btn.secondary {
-    border: 1px solid rgba(255,255,255,.12);
-    background: rgba(255,255,255,.04);
-    color: #f8fafc;
-  }
-  .meta {
-    margin-top: 18px;
-    color: rgba(148,163,184,.92);
-    font-size: .9rem;
-    line-height: 1.65;
-  }
-`;
+const destinations = [
+  { name: 'Kathmandu', subtitle: 'Temple streets & mountain air' },
+  { name: 'Pokhara', subtitle: 'Lake views & sunrise escapes' },
+  { name: 'Chitwan', subtitle: 'Wildlife and warm hospitality' },
+];
+
+const stats = [
+  { label: 'Trusted rides', value: '24k+' },
+  { label: 'Happy travellers', value: '98%' },
+  { label: 'Live routes', value: '180+' },
+];
 
 function App() {
   return (
-    <main className="launcher">
-      <style>{launcherStyles}</style>
-      <section className="panel">
-        <div className="badge">Anthola starter window</div>
-        <h1>Open the real Anthola booking app</h1>
-        <p className="lead">
-          This nested project is a lightweight launcher. The full register, login, bus booking,
-          tour package, payment upload, and admin verification flow lives in the main Anthola app
-          served by the backend.
-        </p>
+    <main className="anthola-shell">
+      <section className="hero-panel">
+        <nav className="topbar">
+          <div className="brand">Anthola</div>
+          <div className="nav-links">
+            <a href="#destinations">Destinations</a>
+            <a href="#experience">Experience</a>
+            <a href="#contact">Contact</a>
+          </div>
+        </nav>
 
-        <div className="actions">
-          <a className="btn primary" href="http://localhost:5000/" target="_blank" rel="noreferrer">
-            Open Main App
-          </a>
-          <a className="btn secondary" href="http://localhost:5000/admin" target="_blank" rel="noreferrer">
-            Open Admin
-          </a>
-        </div>
-
-        <div className="grid">
-          <div className="card">
-            <h2>Default accounts</h2>
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <span className="pill">Nepal-inspired luxury travel</span>
+            <h1>Book the scenic route in minutes.</h1>
             <p>
-              Admin: <strong>admin / admin123</strong>
-              <br />
-              Owner: <strong>owner / owner123</strong>
+              Discover premium buses, flexible tours, and real-time seat availability across the
+              Himalayas and beyond.
             </p>
+            <div className="hero-actions">
+              <a className="btn btn-primary" href="http://localhost:5000/">Explore journeys</a>
+              <a className="btn btn-secondary" href="http://localhost:5000/admin">Owner dashboard</a>
+            </div>
+            <div className="hero-stats">
+              {stats.map((item) => (
+                <div key={item.label} className="stat-card">
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="card">
-            <h2>Register users</h2>
-            <p>Use the main app to create customer accounts, book seats, and upload payment proof.</p>
-          </div>
-          <div className="card">
-            <h2>Friendly errors</h2>
-            <p>409 now means a duplicate account or booking, and 401 means the credentials need another look.</p>
+
+          <div className="hero-visual" aria-hidden="true">
+            <div className="glow glow-one" />
+            <div className="glow glow-two" />
+            <div className="bus-card">
+              <div className="bus-top" />
+              <div className="bus-body" />
+              <div className="bus-wheel left" />
+              <div className="bus-wheel right" />
+            </div>
+            <div className="mountain mountain-one" />
+            <div className="mountain mountain-two" />
           </div>
         </div>
+      </section>
 
-        <p className="meta">
-          If you want the nested app to become the full app too, I can wire it to the same root
-          frontend next. For now this keeps the launcher simple and buildable on its own.
-        </p>
+      <section id="destinations" className="content-section">
+        <div className="section-title">
+          <span className="pill">Smart search</span>
+          <h2>Popular destinations</h2>
+        </div>
+        <div className="card-grid">
+          {destinations.map((item) => (
+            <article className="info-card" key={item.name}>
+              <h3>{item.name}</h3>
+              <p>{item.subtitle}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="experience" className="content-section two-column">
+        <div className="info-card large">
+          <span className="pill">Why Anthola</span>
+          <h2>Modern booking crafted for every traveller.</h2>
+          <p>
+            This experience now showcases the premium positioning of the platform while keeping the
+            main booking flow intact in the production app.
+          </p>
+        </div>
+        <div className="info-card large">
+          <span className="pill">Included</span>
+          <ul className="feature-list">
+            <li>Live seat updates</li>
+            <li>Tour packages and guides</li>
+            <li>Secure payments and receipts</li>
+            <li>Owner analytics and fleet insights</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="contact" className="content-section footer-cta">
+        <h2>Ready for the next journey?</h2>
+        <p>Open the main app to continue booking, managing tours, and operating your fleet.</p>
       </section>
     </main>
   );

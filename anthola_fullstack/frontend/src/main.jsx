@@ -15,7 +15,7 @@ function Root() {
   // HeroUI uses built-in light/dark; staging falls back to dark for its components.
   const herouiTheme = theme === 'staging' ? 'dark' : theme;
   return (
-    <HeroUIProvider theme={herouiTheme} defaultTheme="dark">
+    <HeroUIProvider theme={herouiTheme}>
       <App />
     </HeroUIProvider>
   );

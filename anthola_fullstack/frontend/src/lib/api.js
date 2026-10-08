@@ -39,11 +39,19 @@ export async function api(path, { method = 'GET', body, auth: requireAuthToken =
   const baseUrl = getApiBaseUrl();
   const url = `${baseUrl}${path}`;
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
+    });
+  } catch (error) {
+    const networkError = new Error('The backend is currently unavailable. Please make sure the server is running on port 5000.');
+    networkError.status = 503;
+    networkError.cause = error;
+    throw networkError;
+  }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

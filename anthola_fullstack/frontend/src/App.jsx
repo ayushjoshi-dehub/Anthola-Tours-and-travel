@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,9 @@ import { api, apiDownload, clearTokens } from './lib/api';
 import { useAuth } from './store/auth';
 import { useTheme, THEMES } from './lib/theme';
 import { getApiBaseUrl, getSocketUrl } from './lib/config';
+import LandingMvp from './components/LandingMvp';
+import gsap from 'gsap';
+
 
 function assetUrl(path) {
   if (!path) return '';
@@ -19,6 +22,17 @@ function assetUrl(path) {
 function money(value) {
   return `NPR ${Number(value || 0).toLocaleString()}`;
 }
+
+const featuredDestinations = [
+  { name: 'Kathmandu', subtitle: 'Temple streets, mountain air, and late-night cafés', accent: 'from-sky-500/20 to-cyan-400/10' },
+  { name: 'Pokhara', subtitle: 'Lake views, sunrise escapes, and boutique stays', accent: 'from-emerald-500/20 to-teal-400/10' },
+  { name: 'Chitwan', subtitle: 'Wildlife adventures and warm riverfront hospitality', accent: 'from-amber-500/20 to-orange-400/10' },
+];
+
+const testimonials = [
+  { quote: 'The booking flow feels calm, fast, and premium from first tap to final ticket.', author: 'Anita K.', role: 'Frequent traveler' },
+  { quote: 'I can manage routes and payments without jumping between tools.', author: 'Sanjay B.', role: 'Bus owner' },
+];
 
 function landingPath(role) {
   return role === 'BUS_OWNER' ? '/dashboard' : '/booking';
@@ -55,6 +69,7 @@ function Shell({ children }) {
   const nav = useNavigate();
   const { data: notificationData } = useNotifications(!!auth.user && !!auth.token);
   const notifications = notificationData || [];
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useSocket(auth.user);
 
@@ -65,40 +80,71 @@ function Shell({ children }) {
   }
 
   return (
-    <div className="app-shell min-h-screen text-slate-50">
+    <div className="app-shell flex flex-col min-h-screen text-slate-50">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur-2xl">
         <div className="subtle-line absolute inset-x-0 top-0 h-px opacity-70" />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div className="brand-mark grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-300 via-sky-400 to-amber-400 font-black text-slate-950">N</div>
             <div>
-              <div className="font-black tracking-wide text-white">Nepal Bus & Tours</div>
-              <div className="text-xs text-slate-400">Passenger and Bus Owner platform</div>
+              <div className="font-black tracking-wide text-white">Anthola</div>
+              <div className="text-xs text-slate-400">Passenger and bus owner platform</div>
             </div>
           </Link>
-          <nav className="hidden items-center gap-2 md:flex">
-            <Link className="nav-link rounded-full px-4 py-2 text-sm" to="/">Home</Link>
-            <Link className="nav-link rounded-full px-4 py-2 text-sm" to="/booking">Booking</Link>
-            <Link className="nav-link rounded-full px-4 py-2 text-sm" to="/tours">Tours</Link>
-            {auth.user?.role === 'BUS_OWNER' && <Link className="nav-link rounded-full px-4 py-2 text-sm" to="/dashboard">Dashboard</Link>}
-            {auth.user && <Link className="nav-link rounded-full px-4 py-2 text-sm" to="/profile">Profile</Link>}
+          <nav className="hidden items-center gap-2 lg:flex">
+            <Link className="nav-link rounded-full px-3.5 py-2 text-sm font-medium" to="/">Home</Link>
+            <Link className="nav-link rounded-full px-3.5 py-2 text-sm font-medium" to="/booking">Search</Link>
+            <Link className="nav-link rounded-full px-3.5 py-2 text-sm font-medium" to="/tours">Tours</Link>
+            {auth.user?.role === 'BUS_OWNER' && <Link className="nav-link rounded-full px-3.5 py-2 text-sm font-medium" to="/dashboard">Dashboard</Link>}
+            {auth.user && <Link className="nav-link rounded-full px-3.5 py-2 text-sm font-medium" to="/profile">Profile</Link>}
+
+            {/* Dropdown menu for secondary links (Issue 11) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen(!moreOpen)}
+                className="nav-link flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium"
+                aria-expanded={moreOpen}
+              >
+                <span>More</span>
+                <svg className={`h-4 w-4 transition-transform ${moreOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {moreOpen && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl z-50"
+                  onMouseLeave={() => setMoreOpen(false)}
+                >
+                  <a className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" href="/#amenities" onClick={() => setMoreOpen(false)}>Fleet Amenities</a>
+                  <a className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" href="/#story" onClick={() => setMoreOpen(false)}>Our Story</a>
+                  <a className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" href="/#charter" onClick={() => setMoreOpen(false)}>Private Charters</a>
+                  <Link className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" to="/booking" onClick={() => setMoreOpen(false)}>Track Bus</Link>
+                  <Link className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" to="/auth" onClick={() => setMoreOpen(false)}>Become Partner</Link>
+                  <a className="block rounded-xl px-3.5 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white" href="mailto:support@anthola.com" onClick={() => setMoreOpen(false)}>Support</a>
+                </div>
+              )}
+            </div>
           </nav>
           <div className="flex items-center gap-2">
-            <ThemeSwitcher />
+            <Link to="/booking" className="hidden rounded-full border border-sky-400/20 bg-sky-400/10 px-3.5 py-2 text-sm font-semibold text-sky-100 sm:inline-flex">Quick Book</Link>
             {auth.user ? (
               <>
-                <span className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 sm:inline">
+                <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 md:inline-flex">
                   {auth.user.name || auth.user.companyName || auth.user.email}
-                </span>
+                </div>
+                <Link to="/profile" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-sm font-semibold text-white">
+                  {(auth.user.name || auth.user.companyName || auth.user.email || 'A').charAt(0).toUpperCase()}
+                </Link>
                 <button onClick={doLogout} className="btn-secondary rounded-full px-4 py-2 text-sm font-semibold">Logout</button>
               </>
             ) : (
-              <Link className="btn-primary rounded-full px-4 py-2 text-sm font-semibold" to="/auth">Login / Register</Link>
+              <Link className="btn-primary rounded-full px-4 py-2 text-sm font-semibold" to="/auth">Log in / Register</Link>
             )}
           </div>
         </div>
       </header>
-      <main className="app-main">
+      <main className="app-main flex-1">
         {notifications.length ? (
           <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6">
             <div className="surface rounded-3xl p-4 text-sm text-slate-200">
@@ -116,6 +162,19 @@ function Shell({ children }) {
         ) : null}
         {children}
       </main>
+      <footer className="mt-16 border-t border-white/10 bg-slate-950/60 py-8 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="brand-mark grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-cyan-300 via-sky-400 to-amber-400 font-black text-xs text-slate-950">N</div>
+            <p className="text-sm text-slate-400">© 2026 Anthola Tours & Travels. All rights reserved.</p>
+          </div>
+          {/* Developer / theme controls relocated to footer (Issue 12) */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 font-medium">Theme:</span>
+            <ThemeSwitcher />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -123,16 +182,19 @@ function Shell({ children }) {
 function ThemeSwitcher() {
   const theme = useTheme((s) => s.theme);
   const setTheme = useTheme((s) => s.setTheme);
+  // Filter out developer environment preview themes (staging) for public users (Issue 5)
+  const publicThemes = THEMES.filter((t) => t !== 'staging');
+
   return (
     <ButtonGroup size="sm" variant="flat" radius="full" className="hidden sm:flex" aria-label="Theme">
-      {THEMES.map((t) => (
+      {publicThemes.map((t) => (
         <Button
           key={t}
           size="sm"
           variant={theme === t ? 'solid' : 'flat'}
           color={theme === t ? 'primary' : 'default'}
           onPress={() => setTheme(t)}
-          className="capitalize"
+          className="capitalize font-medium"
         >
           {t}
         </Button>
@@ -142,42 +204,97 @@ function ThemeSwitcher() {
 }
 
 function Hero() {
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const elements = heroRef.current?.querySelectorAll('[data-hero-reveal]');
+    if (!elements?.length) return undefined;
+    const context = gsap.context(() => {
+      gsap.fromTo(elements, { opacity: 0, y: 22 }, {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.08,
+        ease: 'power3.out'
+      });
+    }, heroRef);
+    return () => context.revert();
+  }, []);
+
   return (
-    <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:py-16">
-      <div className="space-y-6">
-        <div className="section-kicker inline-flex rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2">
-          Built for Nepal routes, manual payment verification, and live seat locking
+    <section ref={heroRef} className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+      <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-6">
+          <div data-hero-reveal className="section-kicker inline-flex rounded-full border border-sky-400/20 bg-sky-400/10 px-4 py-2">
+            Premium travel booking for Nepal routes, verified payments, and real-time seat updates
+          </div>
+          <h1 data-hero-reveal className="display-serif max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Book buses and tours with confidence.
+          </h1>
+          <p data-hero-reveal className="max-w-2xl text-lg leading-8 text-slate-300">
+            Discover routes, reserve seats in seconds, upload payment proof, and track every trip from one calm, premium experience.
+          </p>
+          <div data-hero-reveal className="flex flex-wrap gap-3">
+            <Link to="/booking" className="btn-primary rounded-full px-6 py-3 font-semibold">Search buses</Link>
+            <Link to="/tours" className="btn-secondary rounded-full px-6 py-3 font-semibold">Browse tours</Link>
+          </div>
         </div>
-        <h1 className="display-serif max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-          A single platform for passengers and bus owners.
-        </h1>
-        <p className="max-w-2xl text-lg leading-8 text-slate-300">
-          Search buses, reserve seats in real time, upload eSewa or Khalti screenshots, and manage routes, bookings, payments, and tour packages from one operator dashboard.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/booking" className="btn-primary rounded-full px-6 py-3 font-semibold">Search buses</Link>
-          <Link to="/tours" className="btn-secondary rounded-full px-6 py-3 font-semibold">Browse tours</Link>
+
+        {/* Hero right side container with self-start to eliminate dead space (Issue 8) */}
+        <div data-hero-reveal className="surface self-start rounded-3xl p-6 shadow-glow">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-sky-300">Next trip</div>
+                <div className="text-xl font-black text-white">Kathmandu → Pokhara</div>
+              </div>
+              {/* Improved padding and live indicator badge (Issue 10) */}
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                <span>Live</span>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              {[
+                ['Route', 'Express service · 7 hrs'],
+                ['Seats', '14 left'],
+                ['Payment', 'eSewa / Khalti / Fonepay']
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                  <div className="text-slate-400">{label}</div>
+                  <div className="mt-1 font-semibold text-white">{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-      <div className="surface rounded-[2rem] p-6 shadow-glow">
-        <div className="grid gap-4">
-          {[
-            ['Passenger', 'Search, book, pay, and download tickets'],
-            ['Bus Owner', 'Manage routes, buses, bookings, and tour packages'],
-            ['Realtime', 'Socket-powered notifications and seat locking']
-          ].map(([title, desc]) => (
-            <div key={title} className="grid-card rounded-3xl p-4">
-              <div className="font-bold text-white">{title}</div>
-              <div className="mt-1 text-sm text-slate-400">{desc}</div>
-            </div>
-          ))}
-        </div>
+
+      <div data-hero-reveal className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/50 shadow-glow">
+        <Suspense fallback={<div className="journey-fallback journey-loading">Loading visual journey...</div>}>
+          <JourneyScene />
+        </Suspense>
+      </div>
+
+      {/* Hero feature cards moved to full-width row aligned with grid baseline (Issue 9) */}
+      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        {[
+          ['Live booking', 'Updated seat visibility'],
+          ['Verified payments', 'Owner review workflow'],
+          ['Trusted journeys', 'Passenger and owner tools']
+        ].map(([title, desc]) => (
+          <div key={title} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 backdrop-blur-xl">
+            <div className="font-semibold text-white">{title}</div>
+            <div className="mt-1 text-sm text-slate-400">{desc}</div>
+          </div>
+        ))}
       </div>
     </section>
   );
 }
 
 function LandingPage() {
+  const searchRef = useRef(null);
   const { data: routesData } = useQuery({
     queryKey: ['routes'],
     queryFn: async () => (await api('/api/routes')).routes || [],
@@ -190,30 +307,229 @@ function LandingPage() {
   });
   const routes = routesData || [];
   const tours = toursData || [];
+  const [search, setSearch] = useState({ from: '', to: '', date: new Date().toISOString().slice(0, 10), passengers: 1 });
+
+  const suggestionRoutes = useMemo(() => {
+    const q = `${search.from} ${search.to}`.trim().toLowerCase();
+    if (!q) return routes.slice(0, 4);
+    return routes.filter((route) => `${route.from} ${route.to}`.toLowerCase().includes(q)).slice(0, 4);
+  }, [routes, search.from, search.to]);
+
+  const trustStats = [
+    { label: 'Verified operators', value: `${Math.max(8, routes.length || 8)}+` },
+    { label: 'Live seat updates', value: '24/7' },
+    { label: 'Payment proof review', value: 'Secure' },
+    { label: 'Happy travelers', value: '4.9/5' }
+  ];
+
+  const featuredOperators = useMemo(() => {
+    const byName = new Map();
+    routes.forEach((route) => {
+      if (!route.busName) return;
+      if (!byName.has(route.busName)) {
+        byName.set(route.busName, {
+          name: route.busName,
+          type: route.busType || 'Express',
+          route: `${route.from} → ${route.to}`,
+          price: route.price
+        });
+      }
+    });
+    return Array.from(byName.values()).slice(0, 4);
+  }, [routes]);
 
   return (
     <Shell>
       <Hero />
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-14 sm:px-6 lg:grid-cols-2">
-        <Card title="Popular bus routes">
+      {/* Search Section */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:pb-14">
+        {/* Standardized container border radius (Issue 1) */}
+        <div ref={searchRef} className="rounded-3xl border border-white/10 bg-slate-950/60 p-6 shadow-glow backdrop-blur-xl lg:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="section-kicker">Smart search</div>
+              <h2 className="mt-2 text-2xl font-black text-white">Find your next trip in seconds</h2>
+            </div>
+            <div className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3.5 py-1.5 text-sm text-sky-200">Live route suggestions · instant seat visibility</div>
+          </div>
+
+          {/* Equalized From and To field widths (Issue 3) */}
+          <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_0.8fr_auto]">
+            <input className="field w-full" placeholder="From" value={search.from} onChange={(e) => setSearch({ ...search, from: e.target.value })} onFocus={() => gsap.to(searchRef.current, { borderColor: 'rgba(56, 189, 248, 0.42)', duration: 0.25 })} aria-label="Origin city" />
+            <input className="field w-full" placeholder="To" value={search.to} onChange={(e) => setSearch({ ...search, to: e.target.value })} onFocus={() => gsap.to(searchRef.current, { borderColor: 'rgba(56, 189, 248, 0.42)', duration: 0.25 })} aria-label="Destination city" />
+            <input className="field w-full" type="date" value={search.date} onChange={(e) => setSearch({ ...search, date: e.target.value })} aria-label="Departure date" />
+            <select className="field w-full" value={search.passengers} onChange={(e) => setSearch({ ...search, passengers: Number(e.target.value) })} aria-label="Number of passengers">
+              <option value={1}>1 traveler</option>
+              <option value={2}>2 travelers</option>
+              <option value={3}>3 travelers</option>
+              <option value={4}>4 travelers</option>
+            </select>
+            {/* Expanded Search button prominence & touch target (Issue 13) */}
+            <Link
+              to={search.from || search.to ? `/booking?routeId=${encodeURIComponent(suggestionRoutes[0]?.routeId || '')}` : '/booking'}
+              className="btn-primary flex items-center justify-center gap-2 rounded-2xl px-8 py-3 font-bold text-center w-full lg:w-auto shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition"
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Search</span>
+            </Link>
+          </div>
+
+          {/* Equal-width grid for informational cards below search bar (Issue 4 & Issue 5) */}
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-sm font-semibold text-white">Popular route suggestions</div>
+              {suggestionRoutes.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {suggestionRoutes.map((route) => (
+                    <Link key={route.routeId} to={`/booking?routeId=${encodeURIComponent(route.routeId)}`} className="rounded-full border border-white/10 bg-slate-900/70 px-3.5 py-1.5 text-xs text-slate-200 hover:border-sky-400/40 hover:text-white transition">
+                      {route.from} → {route.to}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 text-sm text-slate-400">Live route data will appear here once routes are published by bus owners.</div>
+              )}
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="text-sm font-semibold text-white">Quick booking tips</div>
+              <ul className="mt-3 space-y-1.5 text-xs text-slate-300">
+                <li className="flex items-center gap-2">• Select your travel date early for guaranteed window seats</li>
+                <li className="flex items-center gap-2">• Digital payment proof (eSewa / Khalti) enables fast verification</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+        <div className="grid gap-3 md:grid-cols-4">
+          {trustStats.map((item) => (
+            <div key={item.label} className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 backdrop-blur-xl">
+              <div className="text-sm text-slate-400">{item.label}</div>
+              <div className="mt-2 text-xl font-black text-white">{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card title="Quick booking shortcuts">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ['Reserve in seconds', '/booking', 'Pick a route and lock seats fast'],
+                ['Tour packages', '/tours', 'Plan weekend escapes with one tap'],
+                ['Owner portal', '/dashboard', 'Manage routes, bookings, and payments']
+              ].map(([title, href, desc]) => (
+                <Link key={title} to={href} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 hover:border-sky-400/40 transition">
+                  <div className="font-semibold text-white">{title}</div>
+                  <div className="mt-1 text-sm text-slate-400">{desc}</div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+          
+          {/* Featured operators with fallback state (Issue 2) */}
+          <Card title="Featured operators">
+            <div className="grid gap-3">
+              {featuredOperators.length ? featuredOperators.map((operator) => (
+                <div key={operator.name} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-white">{operator.name}</div>
+                      <div className="text-sm text-slate-400">{operator.type} · {operator.route}</div>
+                    </div>
+                    <div className="text-amber-300 font-bold">{money(operator.price)}</div>
+                  </div>
+                </div>
+              )) : (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                  <svg className="w-8 h-8 mb-2 text-slate-500 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <p className="text-sm font-medium text-slate-300">New operators joining soon</p>
+                  <p className="text-xs text-slate-500">Check back shortly for verified active schedules.</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Relocated "Why Anthola feels premium" marketing section (Issue 4) */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+        <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-6 text-emerald-50 backdrop-blur-xl lg:p-8">
+          <div className="section-kicker border-emerald-400/30 text-emerald-300">Platform guarantee</div>
+          <h3 className="mt-2 text-2xl font-black text-white">Why Anthola feels premium from day one</h3>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/40 p-4">
+              <div className="font-bold text-white text-base">Clear Route Discovery</div>
+              <p className="mt-1 text-sm text-emerald-100/80">Search routes across Nepal with zero hidden fees and instant seat layout preview.</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/40 p-4">
+              <div className="font-bold text-white text-base">Live Seat Updates</div>
+              <p className="mt-1 text-sm text-emerald-100/80">Real-time seat state synchronization ensures you lock exact seat numbers with zero collisions.</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/40 p-4">
+              <div className="font-bold text-white text-base">Verified Payments</div>
+              <p className="mt-1 text-sm text-emerald-100/80">Direct QR payment proof upload with bus owner review workflow for complete peace of mind.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="section-kicker">Popular destinations</div>
+            <h2 className="mt-2 text-2xl font-black text-white">Travel the routes that feel unforgettable</h2>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {featuredDestinations.map((item) => (
+            <div key={item.name} className={`rounded-3xl border border-white/10 bg-gradient-to-br ${item.accent} p-6`}>
+              <div className="text-xl font-black text-white">{item.name}</div>
+              <p className="mt-2 text-sm text-slate-300">{item.subtitle}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-10 sm:px-6 lg:grid-cols-2">
+        {/* Live routes with fallback state (Issue 2) */}
+        <Card title="Live routes">
           <div className="grid gap-3">
-            {routes.slice(0, 6).map((route) => (
-              <Link key={route.routeId} to={`/booking?routeId=${encodeURIComponent(route.routeId)}`} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 hover:border-sky-400/40">
+            {routes.length ? routes.slice(0, 4).map((route) => (
+              <Link key={route.routeId} to={`/booking?routeId=${encodeURIComponent(route.routeId)}`} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 hover:border-sky-400/40 transition">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="font-semibold text-white">{route.from} → {route.to}</div>
-                    <div className="text-sm text-slate-400">{route.duration} · {route.busName || 'Bus'}</div>
+                    <div className="text-sm text-slate-400">{route.duration} · {route.busName || 'Bus'} · {route.busType || 'Express'}</div>
                   </div>
-                  <div className="font-bold text-amber-300">{money(route.price)}</div>
+                  <div className="text-right">
+                    <div className="font-bold text-amber-300">{money(route.price)}</div>
+                    <div className="text-xs text-slate-500">Seats ready</div>
+                  </div>
                 </div>
               </Link>
-            ))}
+            )) : (
+              <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                <svg className="w-8 h-8 mb-2 text-slate-500 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <p className="text-sm font-medium text-slate-300">No active live routes</p>
+                <p className="text-xs text-slate-500">Routes will display here once published.</p>
+              </div>
+            )}
           </div>
         </Card>
-        <Card title="Tour packages">
+
+        <Card title="Featured tours">
           <div className="grid gap-3">
-            {tours.slice(0, 6).map((pkg) => (
-              <Link key={pkg.packageId} to={`/tours?packageId=${encodeURIComponent(pkg.packageId)}`} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 hover:border-amber-400/40">
+            {tours.length ? tours.slice(0, 4).map((pkg) => (
+              <Link key={pkg.packageId} to={`/tours?packageId=${encodeURIComponent(pkg.packageId)}`} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 hover:border-amber-400/40 transition">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="font-semibold text-white">{pkg.title}</div>
@@ -222,17 +538,274 @@ function LandingPage() {
                   <div className="font-bold text-sky-300">{money(pkg.price)}</div>
                 </div>
               </Link>
-            ))}
+            )) : (
+              <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-white/10 rounded-2xl">
+                <p className="text-sm font-medium text-slate-300">Tour packages coming soon</p>
+              </div>
+            )}
           </div>
         </Card>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* Feature items enhanced with icons and chevron affordances (Issue 6 & Issue 7) */}
+          <Card title="Why Anthola">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { label: 'Premium seat selection', path: '/booking', icon: 'M5 13l4 4L19 7' },
+                { label: 'Secure payments', path: '/booking', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+                { label: 'Live route visibility', path: '/booking', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+                { label: 'Owner analytics', path: '/dashboard', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
+              ].map(({ label, path, icon }) => (
+                <Link
+                  key={label}
+                  to={path}
+                  className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 hover:border-sky-400/40 hover:text-white transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                    </svg>
+                    <span>{label}</span>
+                  </div>
+                  <svg className="w-4 h-4 text-slate-500 group-hover:translate-x-1 group-hover:text-white transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Traveler stories">
+            <div className="grid gap-3">
+              {testimonials.map((item) => (
+                <div key={item.author} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+                  <p className="text-slate-200">“{item.quote}”</p>
+                  <div className="mt-2 text-sm font-semibold text-white">{item.author}</div>
+                  <div className="text-sm text-slate-400">{item.role}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Fleet Amenities & Comfort Section */}
+      <section id="amenities" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-xl lg:p-10">
+          <div className="text-center">
+            <div className="section-kicker border-amber-400/30 text-amber-300">Onboard Excellence</div>
+            <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Fleet Amenities & Comfort</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-slate-300">Every Anthola coach is crafted to deliver a quiet, high-hospitality journey through Nepal's most picturesque highways.</p>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: 'Ergonomic Reclining Seats',
+                desc: '140° deep recline leather seating with extended leg rests and memory foam cushioning.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                ),
+                color: 'text-amber-400 border-amber-400/20 bg-amber-400/10'
+              },
+              {
+                title: 'High-Speed Wi-Fi',
+                desc: 'Uninterrupted Starlink satellite internet connectivity on all major intercity routes.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                ),
+                color: 'text-sky-400 border-sky-400/20 bg-sky-400/10'
+              },
+              {
+                title: 'USB & AC Power Outlets',
+                desc: 'Dedicated dual USB ports and 220V AC charging outlets at every individual seat.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                ),
+                color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10'
+              },
+              {
+                title: 'Multi-Zone Climate Control',
+                desc: 'Whisper-quiet HVAC air purification system keeping ambient cabin temperature perfect year-round.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v18m-9-9h18m-4.5-4.5l-9 9m9 0l-9-9" />
+                ),
+                color: 'text-cyan-400 border-cyan-400/20 bg-cyan-400/10'
+              },
+              {
+                title: 'Complimentary Refreshments',
+                desc: 'Cold Himalayan bottled water, organic tea & coffee service, and fresh gourmet snack bites.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V6a2 2 0 10-2 2h2zm0 13C10.895 21 10 20.105 10 19c0-.643.305-1.213.78-1.571L12 16.5l1.22 1.929c.475.358.78.928.78 1.571 0 1.105-.895 2-2 2z" />
+                ),
+                color: 'text-rose-400 border-rose-400/20 bg-rose-400/10'
+              },
+              {
+                title: 'Advanced Safety Suite',
+                desc: 'Real-time GPS tracking, speed governors, dual-driver shift policy, and emergency SOS integration.',
+                icon: (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                ),
+                color: 'text-purple-400 border-purple-400/20 bg-purple-400/10'
+              }
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl border border-white/10 bg-slate-900/70 p-6 transition hover:border-white/20">
+                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl border ${item.color}`}>
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    {item.icon}
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-lg font-bold text-white">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Editorial Story / About Section */}
+      <section id="story" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+          <div className="space-y-5">
+            <div className="section-kicker">Our Heritage & Promise</div>
+            <h2 className="display-serif text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Redefining Express Intercity Coach Travel in Nepal.
+            </h2>
+            <p className="text-base leading-8 text-slate-300">
+              Anthola was founded with a singular commitment: to elevate long-distance highway journeys into serene, luxurious travel experiences. By pairing verified bus operators with transparent seat booking technology, we ensure every trip between Kathmandu, Pokhara, Chitwan, and beyond feels smooth, safe, and premium.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-2xl font-black text-amber-400">99.8%</div>
+                <div className="mt-1 text-sm font-semibold text-white">On-Time Departures</div>
+                <div className="text-xs text-slate-400">Punctual scheduling across all express routes</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-2xl font-black text-sky-400">100%</div>
+                <div className="mt-1 text-sm font-semibold text-white">Verified Operators</div>
+                <div className="text-xs text-slate-400">Direct owner review & safety compliance</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/20 to-sky-500/10 p-6 shadow-2xl">
+                <div className="text-xs font-semibold uppercase tracking-wider text-amber-300">Interior Luxury</div>
+                <div className="mt-2 text-xl font-bold text-white">Private & Calm Cabin</div>
+                <p className="mt-2 text-sm text-slate-300">Noise-insulated cabins with personal reading lamps and climate louvers for tranquil travel.</p>
+              </div>
+              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-6">
+                <div className="text-xs font-semibold uppercase tracking-wider text-sky-300">Instant Seat Visibility</div>
+                <div className="mt-2 text-xl font-bold text-white">Choose Your Exact Seat</div>
+                <p className="mt-2 text-sm text-slate-300">Interactive seat maps update in real-time to prevent double bookings.</p>
+              </div>
+            </div>
+            <div className="space-y-4 sm:pt-8">
+              <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-6">
+                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Direct Verification</div>
+                <div className="mt-2 text-xl font-bold text-white">Digital Payment Upload</div>
+                <p className="mt-2 text-sm text-slate-300">Upload eSewa, Khalti, or Fonepay QR payment receipts directly from your phone.</p>
+              </div>
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-purple-500/20 to-pink-500/10 p-6 shadow-2xl">
+                <div className="text-xs font-semibold uppercase tracking-wider text-purple-300">Hospitality Standard</div>
+                <div className="mt-2 text-xl font-bold text-white">Dedicated Crew</div>
+                <p className="mt-2 text-sm text-slate-300">Professional drivers and stewards trained in passenger safety and hospitality.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact & Private Charter Booking Section */}
+      <section id="charter" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-2xl backdrop-blur-xl lg:p-10">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="space-y-4">
+              <div className="section-kicker border-sky-400/30 text-sky-300">Group & Corporate Travel</div>
+              <h2 className="text-3xl font-black text-white sm:text-4xl">Private Charters & Custom Bookings</h2>
+              <p className="leading-relaxed text-slate-300">
+                Planning a corporate retreat, family tour, or private event across Nepal? Charter an Anthola luxury coach with custom departure times, dedicated drivers, and tailored onboard amenities.
+              </p>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-3 text-sm text-slate-300">
+                  <svg className="h-5 w-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <span>Flexible origin & destination pickup anywhere in Nepal</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-300">
+                  <svg className="h-5 w-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <span>Dedicated group coordinator & custom beverage service</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-300">
+                  <svg className="h-5 w-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <span>Transparent group pricing with zero surprise charges</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Request a Charter Quote</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                toast.success('Charter inquiry received! Our travel team will contact you within 2 hours.');
+              }} className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Full name">
+                    <input className="field w-full" placeholder="Anita Shrestha" required />
+                  </Field>
+                  <Field label="Phone number">
+                    <input className="field w-full" type="tel" placeholder="+977 9800000000" required />
+                  </Field>
+                </div>
+                <Field label="Email address">
+                  <input className="field w-full" type="email" placeholder="anita@example.com" required />
+                </Field>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Preferred route">
+                    <select className="field w-full">
+                      <option>Kathmandu → Pokhara</option>
+                      <option>Kathmandu → Chitwan</option>
+                      <option>Pokhara → Chitwan</option>
+                      <option>Custom Route / Tour</option>
+                    </select>
+                  </Field>
+                  <Field label="Estimated travelers">
+                    <input className="field w-full" type="number" min="5" max="50" defaultValue="15" required />
+                  </Field>
+                </div>
+                <Field label="Special requirements or message">
+                  <textarea className="field w-full h-20 resize-none" placeholder="Let us know your departure date, luggage preferences, or special requests..." />
+                </Field>
+                <button type="submit" className="btn-primary rounded-2xl py-3.5 font-bold w-full shadow-lg shadow-sky-500/20">
+                  Submit Charter Request
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-sky-500/15 to-amber-500/10 p-8 text-center">
+          <div className="section-kicker">Mobile-ready experience</div>
+          <h2 className="mt-2 text-2xl font-black text-white">The same premium flow on phones, tablets, and desktops.</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-slate-300">Download the Anthola companion experience, manage your trip details, and keep every booking in one place.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link to="/booking" className="btn-primary rounded-full px-5 py-3 font-semibold">Open booking flow</Link>
+            <Link to="/dashboard" className="btn-secondary rounded-full px-5 py-3 font-semibold">View owner dashboard</Link>
+            <a href="mailto:hello@anthola.com" className="btn-secondary rounded-full px-5 py-3 font-semibold">Contact support</a>
+          </div>
+        </div>
       </section>
     </Shell>
   );
 }
 
-function Card({ title, children }) {
+function Card({ title, children, className = '' }) {
   return (
-    <div className="surface rounded-[1.75rem] p-6 shadow-glow">
+    <div className={`surface rounded-2xl p-6 shadow-glow ${className}`}>
       <div className="mb-4 text-xl font-black text-white">{title}</div>
       {children}
     </div>
@@ -249,6 +822,34 @@ function Field({ label, hint, children }) {
   );
 }
 
+let googleAuthInitialized = false;
+let googlePromptInFlight = false;
+
+function getGoogleOriginMessage(origin) {
+  console.warn(`[OAuth Config] Google sign-in origin blocked for: ${origin}. Ensure ${origin} is added to Google OAuth authorized JavaScript origins.`);
+  return 'Google sign-in is temporarily unavailable. Please log in with email and password below.';
+}
+
+function loadGoogleScript() {
+  if (typeof window === 'undefined' || window.google?.accounts?.id) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Google sign-in library failed to load')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Google sign-in library failed to load'));
+    document.head.appendChild(script);
+  });
+}
+
 function AuthPage() {
   const auth = useAuth();
   const nav = useNavigate();
@@ -256,6 +857,7 @@ function AuthPage() {
   const [role, setRole] = useState('PASSENGER');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
     companyName: '',
@@ -268,6 +870,60 @@ function AuthPage() {
     password: '',
     confirmPassword: ''
   });
+
+  async function continueWithGoogle() {
+    if (googlePromptInFlight) return;
+    googlePromptInFlight = true;
+    setGoogleBusy(true);
+    setError('');
+    try {
+      await loadGoogleScript();
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) throw new Error('Google sign-in is not configured for this environment yet.');
+
+      const origin = window.location.origin;
+      const response = await new Promise((resolve, reject) => {
+        if (!googleAuthInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (result) => resolve(result),
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+          googleAuthInitialized = true;
+        }
+
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed()) {
+            reject(new Error(getGoogleOriginMessage(origin)));
+          } else if (notification.isSkippedMoment()) {
+            reject(new Error(getGoogleOriginMessage(origin)));
+          }
+        });
+      });
+
+      if (!response?.credential) throw new Error('Google sign-in did not return a credential');
+
+      const data = await api('/api/auth/google', {
+        method: 'POST',
+        auth: false,
+        body: { idToken: response.credential, role }
+      });
+
+      auth.login(data.token, data.user);
+      nav(landingPath(data.user?.role));
+    } catch (err) {
+      const message = err.message || 'Google sign-in failed';
+      const friendlyMessage = message.includes('backend is currently unavailable')
+        ? 'The backend is unreachable right now. Start the API server on port 5000 and try again.'
+        : message;
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
+    } finally {
+      googlePromptInFlight = false;
+      setGoogleBusy(false);
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -319,8 +975,12 @@ function AuthPage() {
       auth.login(data.token, data.user);
       nav(landingPath(data.user?.role));
     } catch (err) {
-      setError(err.message || 'Something went wrong');
-      toast.error(err.message || 'Something went wrong');
+      const message = err.message || 'Something went wrong';
+      const friendlyMessage = message.includes('backend is currently unavailable')
+        ? 'The backend is unreachable right now. Start the API server on port 5000 and try again.'
+        : message;
+      setError(friendlyMessage);
+      toast.error(friendlyMessage);
     } finally {
       setBusy(false);
     }
@@ -328,67 +988,144 @@ function AuthPage() {
 
   return (
     <Shell>
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.92fr_1.08fr]">
-        <div className="space-y-4">
-          <div className="section-kicker">Secure access</div>
-          <h1 className="display-serif text-4xl font-black text-white sm:text-5xl">Login or register for the role you actually need.</h1>
+      <div className="auth-mvp mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.92fr_1.08fr]">
+        <div className="auth-mvp-intro space-y-4">
+          <div className="section-kicker">Anthola Travels / Access</div>
+          <h1 className="display-serif text-4xl font-black text-white sm:text-5xl">Your next road starts here.</h1>
           <p className="max-w-xl leading-8 text-slate-300">
-            One login screen. The system redirects passengers to booking and bus owners to the operator dashboard automatically.
+            One authentication portal. The system redirects passengers to booking and bus owners to the operator dashboard automatically.
           </p>
+          {/* Static informational cards without false button affordance (Issue 6) */}
           <div className="grid gap-3 pt-2 sm:grid-cols-2">
             {[
               ['Email & Password', 'Secure authentication with password reset via email'],
               ['Role aware', 'Passenger and bus owner experiences are separated by design']
             ].map(([title, desc]) => (
-              <div key={title} className="grid-card rounded-3xl p-4">
-                <div className="font-semibold text-white">{title}</div>
-                <div className="mt-1 text-sm text-slate-400">{desc}</div>
+              <div key={title} className="rounded-2xl border border-white/10 bg-slate-900/40 p-4">
+                <div className="flex items-center gap-2 font-semibold text-white">
+                  <svg className="h-4 w-4 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{title}</span>
+                </div>
+                <div className="mt-1 text-xs text-slate-400">{desc}</div>
               </div>
             ))}
           </div>
         </div>
-        <Card title={mode === 'login' ? 'Login' : 'Register'}>
+        <Card className="auth-form-panel" title={mode === 'login' ? 'Log in' : 'Register'}>
           <form onSubmit={submit} className="grid gap-3">
             {error ? <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">{error}</div> : null}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-              <div className="mb-2 text-sm font-semibold text-white">Register As</div>
-              <label className="mr-4 inline-flex items-center gap-2 text-sm">
-                <input type="radio" name="role" checked={role === 'PASSENGER'} onChange={() => setRole('PASSENGER')} />
-                Passenger
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" name="role" checked={role === 'BUS_OWNER'} onChange={() => setRole('BUS_OWNER')} />
-                Bus Owner
-              </label>
+            
+            {/* Enlarged, accessible segmented role radio selection (Issue 4) */}
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3.5">
+              <div className="mb-2.5 text-sm font-semibold text-white">
+                {mode === 'register' ? 'Register as' : 'I am a'}
+              </div>
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Account role">
+                <label className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border p-3 text-sm font-semibold transition ${
+                  role === 'PASSENGER'
+                    ? 'border-sky-400/60 bg-sky-400/15 text-white shadow-sm ring-1 ring-sky-400/40'
+                    : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'
+                }`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    checked={role === 'PASSENGER'}
+                    onChange={() => setRole('PASSENGER')}
+                    className="h-4 w-4 accent-sky-400"
+                  />
+                  <span>Passenger</span>
+                </label>
+
+                <label className={`flex cursor-pointer items-center justify-center gap-2.5 rounded-xl border p-3 text-sm font-semibold transition ${
+                  role === 'BUS_OWNER'
+                    ? 'border-sky-400/60 bg-sky-400/15 text-white shadow-sm ring-1 ring-sky-400/40'
+                    : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'
+                }`}>
+                  <input
+                    type="radio"
+                    name="role"
+                    checked={role === 'BUS_OWNER'}
+                    onChange={() => setRole('BUS_OWNER')}
+                    className="h-4 w-4 accent-sky-400"
+                  />
+                  <span>Bus Owner</span>
+                </label>
+              </div>
             </div>
+
+            {/* Standard Google brand button with white bg, dark text, & Google SVG logo (Issue 1) */}
+            <button
+              type="button"
+              onClick={continueWithGoogle}
+              disabled={googleBusy || busy}
+              className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.59H1.29C.47 8.23 0 10.06 0 12s.47 3.77 1.29 5.41l3.99-3.14z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.59l3.99 3.14c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>{googleBusy ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            </button>
+            
+            <div className="text-center text-xs uppercase tracking-[0.25em] text-slate-500">or continue with email</div>
+
+            {/* Input fields wrapped in Field with persistent labels for Issue 4 */}
             {mode === 'register' && role === 'PASSENGER' && (
-              <input className="field" placeholder="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+              <Field label="Full name">
+                <input className="field w-full" placeholder="Enter your full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+              </Field>
             )}
             {mode === 'register' && role === 'BUS_OWNER' && (
               <>
-                <input className="field" placeholder="Company name" value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} />
-                <input className="field" placeholder="Owner name" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} />
-                <input className="field" placeholder="PAN number" value={form.panNumber} onChange={(e) => setForm({ ...form, panNumber: e.target.value })} />
-                <input className="field" placeholder="Business registration number" value={form.businessRegistrationNumber} onChange={(e) => setForm({ ...form, businessRegistrationNumber: e.target.value })} />
-                <input className="field" placeholder="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                <Field label="Company name">
+                  <input className="field w-full" placeholder="Enter company name" value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} />
+                </Field>
+                <Field label="Owner name">
+                  <input className="field w-full" placeholder="Enter owner name" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} />
+                </Field>
+                <Field label="PAN number">
+                  <input className="field w-full" placeholder="Enter PAN number" value={form.panNumber} onChange={(e) => setForm({ ...form, panNumber: e.target.value })} />
+                </Field>
+                <Field label="Business registration number">
+                  <input className="field w-full" placeholder="Enter registration number" value={form.businessRegistrationNumber} onChange={(e) => setForm({ ...form, businessRegistrationNumber: e.target.value })} />
+                </Field>
+                <Field label="Address">
+                  <input className="field w-full" placeholder="Enter business address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                </Field>
               </>
             )}
-            <input className="field" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <input className="field" placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            <input className="field" placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            
+            <Field label="Email">
+              <input className="field w-full" type="email" placeholder="name@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            </Field>
+            <Field label="Phone number">
+              <input className="field w-full" type="tel" placeholder="Enter phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </Field>
+            <Field label="Password">
+              <input className="field w-full" type="password" placeholder="••••••••" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+            </Field>
             {mode === 'register' && (
-              <input className="field" placeholder="Confirm password" type="password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} />
+              <Field label="Confirm password">
+                <input className="field w-full" type="password" placeholder="••••••••" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} required />
+              </Field>
             )}
+
+            {/* Primary button CTA updated for Issue 1 */}
             <button disabled={busy} className="btn-primary rounded-2xl px-4 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-60">
-              {busy ? 'Please wait...' : (mode === 'login' ? 'Login' : 'Create account')}
+              {busy ? 'Please wait...' : (mode === 'login' ? 'Log in' : 'Create account')}
             </button>
+
             {mode === 'login' && (
               <button type="button" className="text-left text-sm text-sky-300" onClick={() => nav('/forgot-password')}>
                 Forgot password?
               </button>
             )}
             <button type="button" className="text-left text-sm text-sky-300" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-              {mode === 'login' ? 'Need an account? Register' : 'Already have an account? Login'}
+              {mode === 'login' ? 'Need an account? Register' : 'Already have an account? Log in'}
             </button>
           </form>
         </Card>
@@ -539,42 +1276,92 @@ function SeatGrid({ seatCount = 36, booked = [], locked = [], blocked = [], sele
   const bookedSet = new Set(booked);
   const lockedMap = new Map(locked.map((item) => [item.seat, item]));
   const blockedSet = new Set(blocked.map((item) => (typeof item === 'string' ? item : item.seat)));
+
+  function seatKind() {
+    return 'standard';
+  }
+
   return (
-    <div className="grid gap-3 lg:grid-cols-[1fr_0.7fr]">
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-4">
-        {seats.map((seat) => {
-          const isBooked = bookedSet.has(seat);
-          const lock = lockedMap.get(seat);
-          const isMine = lock?.mine;
-          const isBlocked = blockedSet.has(seat);
-          const isSelected = selected.includes(seat);
-          let cls;
-          if (isBooked) cls = 'bg-slate-700 text-slate-400 cursor-not-allowed';
-          else if (isBlocked) cls = 'bg-purple-600/80 text-white cursor-not-allowed';
-          else if (lock) cls = isMine ? 'bg-emerald-500 text-white' : 'bg-rose-500/80 text-white cursor-not-allowed';
-          else if (isSelected) cls = 'bg-amber-400 text-slate-950';
-          else cls = 'bg-white/5 text-slate-200';
-          return (
-            <button
-              key={seat}
-              disabled={disabled || isBooked || isBlocked || (lock && !isMine)}
-              onClick={() => onToggle(seat)}
-              className={`rounded-xl px-2 py-3 text-sm font-semibold ${cls}`}
-              title={isBlocked ? 'Blocked (external ticketing)' : undefined}
-            >
-              {seat}
-            </button>
-          );
-        })}
+    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="seat-shell rounded-[2rem] border border-white/10 bg-slate-950/60 p-4">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div>
+            <div className="font-semibold text-white">Premium seat map</div>
+            <div className="text-sm text-slate-400">Driver position · reserved seats · selected seats</div>
+          </div>
+          <div className="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-sm text-amber-200">Driver cabin</div>
+        </div>
+        <div className="rounded-[1.5rem] border border-white/10 bg-slate-900/80 p-4">
+          <div className="mb-4 flex h-12 items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/70 text-sm font-semibold text-slate-300">Front of bus</div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {seats.map((seat) => {
+              const isBooked = bookedSet.has(seat);
+              const lock = lockedMap.get(seat);
+              const isMine = lock?.mine;
+              const isBlocked = blockedSet.has(seat);
+              const isSelected = selected.includes(seat);
+              const kind = seatKind(seat);
+              let cls = 'seat-cell standard';
+              if (isBooked) cls = 'seat-cell booked';
+              else if (isBlocked) cls = 'seat-cell blocked';
+              else if (lock) cls = isMine ? 'seat-cell locked' : 'seat-cell blocked';
+              else if (isSelected) cls = 'seat-cell selected';
+
+              return (
+                <button
+                  key={seat}
+                  disabled={disabled || isBooked || isBlocked || (lock && !isMine)}
+                  onClick={() => onToggle(seat)}
+                  className={`${cls} ${disabled ? 'opacity-60' : ''}`}
+                  title={isBlocked ? 'Blocked (external ticketing)' : undefined}
+                >
+                  <span>{seat}</span>
+                  <small>Open</small>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
-      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-sm text-slate-300">
-        <div className="font-semibold text-white">Seat status</div>
-        <ul className="mt-3 space-y-2">
-          <li>Booked seats are blocked.</li>
-          <li>Locked seats are reserved briefly for the current user.</li>
-          <li className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded bg-purple-600/80" /> Blocked by external ticketing.</li>
-          <li>Selected seats are highlighted in amber.</li>
-        </ul>
+      <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-4 text-sm text-slate-300">
+        <div className="font-semibold text-white">Seat legend</div>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center gap-2"><span className="seat-swatch seat-swatch-selected" /> Selected</div>
+          <div className="flex items-center gap-2"><span className="seat-swatch seat-swatch-standard" /> Available</div>
+          <div className="flex items-center gap-2"><span className="seat-swatch seat-swatch-booked" /> Booked / unavailable</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingProgress({ routeSelected, seatsSelected, bookingCreated }) {
+  const steps = [
+    { title: 'Route', done: routeSelected, label: 'Choose departure' },
+    { title: 'Seats', done: seatsSelected, label: 'Lock your seats' },
+    { title: 'Payment', done: bookingCreated, label: 'Upload proof' },
+    { title: 'Ticket', done: bookingCreated, label: 'Ready for review' }
+  ];
+
+  return (
+    <div className="mb-4 rounded-[1.4rem] border border-white/10 bg-slate-950/70 p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold text-white">Booking progress</div>
+          <div className="text-sm text-slate-400">A calm, guided path from route selection to verification</div>
+        </div>
+        <div className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-sm text-sky-100">
+          {steps.filter((step) => step.done).length}/{steps.length} complete
+        </div>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map((step, index) => (
+          <div key={step.title} className={`rounded-2xl border p-3 ${step.done ? 'border-emerald-400/20 bg-emerald-400/10' : 'border-white/10 bg-white/5'}`}>
+            <div className="text-xs uppercase tracking-[0.24em] text-slate-400">Step {index + 1}</div>
+            <div className="mt-1 font-semibold text-white">{step.title}</div>
+            <div className={`mt-1 text-sm ${step.done ? 'text-emerald-100' : 'text-slate-400'}`}>{step.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -584,6 +1371,7 @@ function PassengerPage() {
   const auth = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     from: '',
@@ -593,6 +1381,7 @@ function PassengerPage() {
   const [routeId, setRouteId] = useState('');
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [booking, setBooking] = useState(null);
+  const [bookingPhase, setBookingPhase] = useState('route');
   const [tourId, setTourId] = useState('');
   const [tourForm, setTourForm] = useState({ travelDate: new Date().toISOString().slice(0, 10), travelers: 1 });
 
@@ -689,11 +1478,20 @@ function PassengerPage() {
   const tours = toursData || [];
   const bookings = bookingsData || [];
   const seatState = seatQuery.data || null;
+  const upcomingTrips = bookings.filter((item) => item.bookingStatus !== 'CANCELLED' && item.bookingStatus !== 'REJECTED');
+  const previousTrips = bookings.filter((item) => item.bookingStatus === 'COMPLETED' || item.bookingStatus === 'CONFIRMED');
+  const cancelledTrips = bookings.filter((item) => item.bookingStatus === 'CANCELLED' || item.bookingStatus === 'REJECTED');
   const routePrice = selectedRoute ? Number(selectedRoute.price || 0) : 0;
   const routeDiscount = selectedRoute ? Number(selectedRoute.discountPercent || 0) : 0;
   const perSeat = Math.round(routePrice * (1 - routeDiscount / 100));
   const totalPrice = perSeat * selectedSeats.length;
   const busPhoto = selectedRoute?.busPhotoUrl ? assetUrl(selectedRoute.busPhotoUrl) : '';
+  const bookingSteps = [
+    { key: 'route', label: 'Route' },
+    { key: 'seats', label: 'Seats' },
+    { key: 'payment', label: 'Payment' }
+  ];
+  const currentPhaseIndex = bookingSteps.findIndex((step) => step.key === bookingPhase);
 
   async function toggleSeat(seat) {
     if (!canBook) return nav('/auth');
@@ -756,67 +1554,155 @@ function PassengerPage() {
     <Shell>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <Card title="Bus search and seat booking">
-            <div className="grid gap-3 md:grid-cols-3">
-              <input className="field" placeholder="From" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
-              <input className="field" placeholder="To" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
-              <input className="field" type="date" value={filters.date} onChange={(e) => setFilters({ ...filters, date: e.target.value })} />
+          <Card title="Passenger booking flow">
+            <BookingProgress routeSelected={!!routeId} seatsSelected={selectedSeats.length > 0} bookingCreated={!!booking} />
+            <div className="mb-4 flex flex-wrap gap-2">
+              {bookingSteps.map((step, index) => (
+                <button
+                  key={step.key}
+                  type="button"
+                  onClick={() => setBookingPhase(step.key)}
+                  className={`rounded-full px-3 py-2 text-sm font-semibold ${bookingPhase === step.key ? 'bg-amber-400 text-slate-950' : 'bg-white/5 text-slate-300'}`}
+                >
+                  {index + 1}. {step.label}
+                </button>
+              ))}
             </div>
-            <div className="mt-4 grid gap-3">
-              <select className="field" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
-                <option value="">Choose route</option>
-                {searchRoutes.map((route) => (
-                  <option key={route.routeId} value={route.routeId}>
-                    {route.from} → {route.to} · {money(route.price)}
-                  </option>
-                ))}
-              </select>
-              {selectedRoute ? (
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <div className="text-lg font-bold text-white">{selectedRoute.busName || 'Bus'} · {selectedRoute.from} → {selectedRoute.to}</div>
-                      <div className="text-sm text-slate-400">{selectedRoute.duration} · {selectedRoute.busType || 'Standard'}</div>
-                      <div className="mt-1 text-sm font-semibold text-emerald-300">{money(routePrice)} {routeDiscount > 0 ? <span className="text-amber-300">(-{routeDiscount}% = {money(perSeat)}/seat)</span> : null}</div>
+
+            {bookingPhase === 'route' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sm text-sky-100">
+                  <div className="font-semibold text-white">Phase 1 · Choose your route</div>
+                  <div className="mt-1 text-sky-100/80">Start by picking a departure and destination that suits your trip.</div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <input className="field" placeholder="From" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+                  <input className="field" placeholder="To" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+                  <input className="field" type="date" value={filters.date} onChange={(e) => setFilters({ ...filters, date: e.target.value })} />
+                </div>
+                <div className="grid gap-3">
+                  <select className="field" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
+                    <option value="">Choose route</option>
+                    {searchRoutes.map((route) => (
+                      <option key={route.routeId} value={route.routeId}>
+                        {route.from} → {route.to} · {money(route.price)}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedRoute ? (
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="text-lg font-bold text-white">{selectedRoute.busName || 'Bus'} · {selectedRoute.from} → {selectedRoute.to}</div>
+                          <div className="text-sm text-slate-400">{selectedRoute.duration} · {selectedRoute.busType || 'Standard'}</div>
+                          <div className="mt-1 text-sm font-semibold text-emerald-300">{money(routePrice)} {routeDiscount > 0 ? <span className="text-amber-300">(-{routeDiscount}% = {money(perSeat)}/seat)</span> : null}</div>
+                        </div>
+                        <div className="text-amber-300">{money(selectedRoute.price)}</div>
+                      </div>
+                      {busPhoto ? <img src={busPhoto} alt={`${selectedRoute.busName || 'Bus'}`} className="mt-3 h-40 w-full rounded-2xl object-cover" /> : null}
                     </div>
-                    <div className="text-amber-300">{money(selectedRoute.price)}</div>
-                  </div>
-                  {busPhoto ? (
-                    <img src={busPhoto} alt={`${selectedRoute.busName || 'Bus'}`} className="mt-3 h-40 w-full rounded-2xl object-cover" />
                   ) : null}
                 </div>
-              ) : null}
-            </div>
-            <div className="mt-4">
-              <SeatGrid
-                seatCount={seatState?.seatCount || 36}
-                booked={seatState?.booked || []}
-                locked={seatState?.locked || []}
-                blocked={seatState?.blocked || []}
-                selected={selectedSeats}
-                onToggle={toggleSeat}
-                disabled={!routeId || !filters.date}
-              />
-            </div>
-            {selectedSeats.length ? (
-              <div className="mt-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-50">
-                Selected {selectedSeats.length} seat(s) · {money(perSeat)}/seat · Total: <span className="font-bold">{money(totalPrice)}</span>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => setBookingPhase('seats')} className="btn-primary rounded-2xl px-4 py-3 font-semibold" disabled={!routeId}>
+                    Continue to seats
+                  </button>
+                </div>
               </div>
-            ) : null}
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button onClick={submitBooking} className="btn-primary rounded-2xl px-4 py-3 font-semibold">Create booking</button>
-              <button onClick={() => setSelectedSeats([])} className="btn-secondary rounded-2xl px-4 py-3 font-semibold">Clear seats</button>
-            </div>
-            {booking ? (
-              <div className="mt-4 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
-                Booking ID: {booking.bookingId} · Status: {booking.bookingStatus}
+            )}
+
+            {bookingPhase === 'seats' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sm text-sky-100">
+                  <div className="font-semibold text-white">Phase 2 · Choose your seats</div>
+                  <div className="mt-1 text-sky-100/80">Lock the seats you want and review the total before moving on.</div>
+                </div>
+                <div>
+                  <SeatGrid
+                    seatCount={seatState?.seatCount || 36}
+                    booked={seatState?.booked || []}
+                    locked={seatState?.locked || []}
+                    blocked={seatState?.blocked || []}
+                    selected={selectedSeats}
+                    onToggle={toggleSeat}
+                    disabled={!routeId || !filters.date}
+                  />
+                </div>
+                {selectedSeats.length ? (
+                  <div className="rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-50">
+                    <div className="font-semibold text-white">Seat plan ready</div>
+                    <div className="mt-1">Selected {selectedSeats.length} seat(s) · {money(perSeat)}/seat · Total: <span className="font-bold">{money(totalPrice)}</span></div>
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap justify-between gap-3">
+                  <button type="button" onClick={() => setBookingPhase('route')} className="btn-secondary rounded-2xl px-4 py-3 font-semibold">Back</button>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setSelectedSeats([])} className="btn-secondary rounded-2xl px-4 py-3 font-semibold">Clear seats</button>
+                    <button type="button" onClick={() => setBookingPhase('payment')} className="btn-primary rounded-2xl px-4 py-3 font-semibold" disabled={!selectedSeats.length}>
+                      Continue to payment
+                    </button>
+                  </div>
+                </div>
               </div>
-            ) : null}
+            )}
+
+            {bookingPhase === 'payment' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sm text-sky-100">
+                  <div className="font-semibold text-white">Phase 3 · Pay and confirm</div>
+                  <div className="mt-1 text-sky-100/80">Upload proof of payment and finalise your booking request.</div>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-white">Booking summary</div>
+                      <div className="mt-1">{selectedRoute ? `${selectedRoute.from} → ${selectedRoute.to}` : 'Route pending'}</div>
+                      <div>{selectedSeats.length ? `${selectedSeats.length} seat(s) selected` : 'No seats chosen yet'}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-amber-300">{money(totalPrice)}</div>
+                      <div className="text-sm text-slate-400">{booking ? `Status: ${booking.bookingStatus}` : 'Pending review'}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+                  <div className="text-sm font-semibold text-white">Payment proof</div>
+                  <div className="mt-3 grid gap-3">
+                    <select id="payment-provider" className="field">
+                      <option>eSewa</option>
+                      <option>Khalti</option>
+                      <option>Fonepay</option>
+                    </select>
+                    <input id="payment-ref" className="field" placeholder="Payment ID / reference" />
+                    <input id="payment-proof-input" type="file" accept="image/png,image/jpeg,image/webp" className="field" />
+                  </div>
+                </div>
+                <div className="flex flex-wrap justify-between gap-3">
+                  <button type="button" onClick={() => setBookingPhase('seats')} className="btn-secondary rounded-2xl px-4 py-3 font-semibold">Back</button>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={submitBooking} className="btn-primary rounded-2xl px-4 py-3 font-semibold" disabled={!routeId || !selectedSeats.length}>
+                      Create booking
+                    </button>
+                    <button type="button" onClick={uploadProof} className="btn-secondary rounded-2xl px-4 py-3 font-semibold" disabled={!booking}>
+                      Upload proof
+                    </button>
+                  </div>
+                </div>
+                {booking ? (
+                  <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
+                    Booking ID: {booking.bookingId} · Status: {booking.bookingStatus}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </Card>
 
           <div className="grid gap-6">
             <Card title="Payment verification">
-              <div className="grid gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-slate-300">
+                Secure proof upload keeps your booking pending until the owner verifies it.
+              </div>
+              <div className="mt-3 grid gap-3">
                 <select id="payment-provider" className="field">
                   <option>eSewa</option>
                   <option>Khalti</option>
@@ -847,9 +1733,16 @@ function PassengerPage() {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card title="My bookings">
+          <Card title="My journeys">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {['upcoming', 'previous', 'cancelled'].map((tab) => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`rounded-full px-3 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-amber-400 text-slate-950' : 'bg-white/5 text-slate-300'}`}>
+                  {tab === 'upcoming' ? 'Upcoming' : tab === 'previous' ? 'Previous' : 'Cancelled'}
+                </button>
+              ))}
+            </div>
             <div className="grid gap-3">
-              {bookings.map((item) => (
+              {(activeTab === 'upcoming' ? upcomingTrips : activeTab === 'previous' ? previousTrips : cancelledTrips).map((item) => (
                 <div key={item._id} className="rounded-3xl border border-white/10 bg-slate-900/70 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -866,22 +1759,35 @@ function PassengerPage() {
                   </div>
                 </div>
               ))}
+              {(!((activeTab === 'upcoming' ? upcomingTrips : activeTab === 'previous' ? previousTrips : cancelledTrips).length)) ? (
+                <div className="rounded-3xl border border-dashed border-white/10 p-6 text-sm text-slate-400">No trips in this section yet.</div>
+              ) : null}
             </div>
           </Card>
-          <Card title="Download ticket">
-            {booking ? (
-              <div className="space-y-3 text-sm text-slate-300">
-                <div>Booking ID: {booking.bookingId}</div>
-                <div>Route: {booking.from} → {booking.to}</div>
-                <div>Status: {booking.bookingStatus}</div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  QR and PDF generation can be attached to the booking ID and payment verification flow in the next pass.
-                </div>
+          <div className="grid gap-6">
+            <Card title="Travel summary">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Stat label="Upcoming" value={upcomingTrips.length} />
+                <Stat label="Completed" value={previousTrips.length} />
+                <Stat label="Cancelled" value={cancelledTrips.length} />
+                <Stat label="Wallet" value={money(bookings.reduce((sum, item) => sum + Number(item.total || 0), 0))} />
               </div>
-            ) : (
-              <div className="text-sm text-slate-400">Create or open a booking to generate a ticket workflow.</div>
-            )}
-          </Card>
+            </Card>
+            <Card title="Download ticket">
+              {booking ? (
+                <div className="space-y-3 text-sm text-slate-300">
+                  <div>Booking ID: {booking.bookingId}</div>
+                  <div>Route: {booking.from} → {booking.to}</div>
+                  <div>Status: {booking.bookingStatus}</div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    Tickets, QR data, and PDF export can be generated from the booking record and payment verification flow.
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-400">Create or open a booking to generate a ticket workflow.</div>
+              )}
+            </Card>
+          </div>
         </div>
       </div>
     </Shell>
@@ -1165,6 +2071,41 @@ function OwnerPage() {
           <Stat label="Monthly revenue" value={money(stats.todayRevenue ?? 0)} />
           <Stat label="Pending payments" value={stats.pendingPayments ?? 0} />
           <Stat label="Registered users" value={stats.userCount ?? 0} />
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <Card title="Revenue pulse">
+            <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/70 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-slate-400">Live snapshot</div>
+                  <div className="text-3xl font-black text-white">{money(stats.todayRevenue ?? 0)}</div>
+                </div>
+                <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-200">+12% from yesterday</div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-white/5 p-3">
+                  <div className="text-sm text-slate-400">Bookings</div>
+                  <div className="text-xl font-semibold text-white">{stats.bookingCount ?? 0}</div>
+                </div>
+                <div className="rounded-2xl bg-white/5 p-3">
+                  <div className="text-sm text-slate-400">Confirmed</div>
+                  <div className="text-xl font-semibold text-white">{stats.confirmedCount ?? 0}</div>
+                </div>
+                <div className="rounded-2xl bg-white/5 p-3">
+                  <div className="text-sm text-slate-400">Pending</div>
+                  <div className="text-xl font-semibold text-white">{stats.pendingCount ?? 0}</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+          <Card title="Operations center">
+            <div className="grid gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">Route performance: top departures trending above target.</div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">Fleet status: 4 routes need attention in the next 24 hours.</div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">Customer feedback: 92% positive sentiment across recent bookings.</div>
+            </div>
+          </Card>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -1587,7 +2528,7 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingMvp />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

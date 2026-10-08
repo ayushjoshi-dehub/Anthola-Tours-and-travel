@@ -6,6 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./app');
 const { connectDB } = require('./config/db');
+const { validateEnv } = require('./config/env');
 require('./config/firebase');
 const { seedRoutesIfEmpty } = require('./controllers/routes.controller');
 const { seedTourPackagesIfEmpty } = require('./controllers/tours.controller');
@@ -36,6 +37,7 @@ async function cleanupExpiredSeatLocks() {
 async function start() {
   const port = Number(process.env.PORT || 5000);
   try {
+    validateEnv();
     await connectDB(process.env.MONGO_URI);
     console.log('[db] connected');
 

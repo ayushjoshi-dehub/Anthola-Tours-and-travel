@@ -2,8 +2,11 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function normalizeRole(role) {
   const value = String(role || 'PASSENGER').trim().toUpperCase();
@@ -71,6 +74,71 @@ function refreshTtlMs() {
 function buildUsername({ companyName, ownerName, fullName, email, phone }) {
   const base = slugify(companyName || ownerName || fullName || email || phone || 'user');
   return base || `user-${Date.now()}`;
+}
+
+async function verifyGoogleToken(idToken) {
+  if (!idToken) throw new Error('Google credential is required');
+  if (!process.env.GOOGLE_CLIENT_ID) throw new Error('Google sign-in is not configured');
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload?.email) throw new Error('Google account did not return an email');
+
+  return payload;
+}
+
+async function googleAuth(req, res) {
+  try {
+    const body = req.body || {};
+    const idToken = String(body.idToken || body.googleToken || '').trim();
+    const normalizedRole = normalizeRole(body.role);
+
+    const googlePayload = await verifyGoogleToken(idToken);
+    const email = normalizeEmail(googlePayload.email);
+    const googleId = googlePayload.sub;
+    const name = String(googlePayload.name || googlePayload.given_name || email || '').trim() || email;
+
+    let user = await User.findOne({
+      $or: [{ googleId }, { email: new RegExp(`^${escapeRegex(email)}$`, 'i') }]
+    });
+
+    if (!user) {
+      const username = String(body.username || buildUsername({ fullName: name, email, phone: '' })).trim().toLowerCase();
+      user = await User.create({
+        name,
+        username,
+        email,
+        phone: '',
+        role: normalizedRole,
+        authProvider: 'google',
+        googleId,
+        emailVerified: true
+      });
+    } else {
+      user.authProvider = 'google';
+      user.googleId = user.googleId || googleId;
+      user.emailVerified = true;
+      if (!user.name) user.name = name;
+      if (!user.username) user.username = buildUsername({ fullName: name, email, phone: user.phone || '' });
+      await user.save();
+    }
+
+    const token = createAccessToken(user);
+    const refreshToken = createRefreshToken(user);
+
+    return res.json({
+      token,
+      refreshToken,
+      user: user.publicProfile()
+    });
+  } catch (error) {
+    console.error('[auth controller] google auth failed:', error.message);
+    return res.status(401).json({ message: error.message || 'Google authentication failed' });
+  }
 }
 
 async function signup(req, res) {
@@ -346,6 +414,7 @@ async function resetPassword(req, res) {
 module.exports = {
   signup,
   login,
+  googleAuth,
   refresh,
   logout,
   me,
