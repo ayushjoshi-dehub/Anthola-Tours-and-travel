@@ -5,7 +5,7 @@ echo "=== Building Anthola Full Stack ==="
 
 echo "=== Step 1: Installing Frontend Dependencies ==="
 cd anthola_fullstack/frontend
-npm install
+npm install --legacy-peer-deps
 
 echo "=== Step 2: Building Frontend with Vite ==="
 export VITE_API_BASE_URL=https://anthola-tours-and-travel.onrender.com
@@ -21,6 +21,6 @@ ls -la public/ || echo "WARNING: public folder not found!"
 
 echo "=== Step 3: Installing Backend Dependencies ==="
 cd anthola_fullstack/backend
-npm install
+npm install --legacy-peer-deps
 
 echo "=== Build Complete ==="
