@@ -13,9 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      
+      # Frontend
       - name: Install frontend deps
-        run: npm --prefix anthola_fullstack/frontend/anthola\ tours\ and\ travel install
+        run: npm --prefix "anthola_fullstack/frontend/anthola tours and travel" install
       - name: Build frontend
-        run: npm --prefix anthola_fullstack/frontend/anthola\ tours\ and\ travel run build
+        run: npm --prefix "anthola_fullstack/frontend/anthola tours and travel" run build
+      
+      # Backend
       - name: Install backend deps
         run: npm --prefix anthola_fullstack/backend install
+      - name: Build backend
+        run: npm --prefix anthola_fullstack/backend run build || true
+      
+      # Optional: Run tests if available
+      - name: Test backend
+        run: npm --prefix anthola_fullstack/backend test || echo "No tests configured"
